@@ -26,7 +26,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 # Preloaded methods go here.
@@ -321,63 +321,64 @@ Jabber::PubSub::JEAI - Perl extension for Erlang's J-EAI server
 
   use Jabber::PubSub::JEAI;
 
-Channel creation:
+It is important that you put Jabber connection and pub/sub parameters in a hash reference and pass it to the subroutines. Although not all of the pamameters are necessary for each subroutine.
+Example for channel creation:
 
 	my $param = {
 	    'uid'      => 'admin',
 	    'pwd'      => 'nimda',
-	    'host'     => 'localhost',
-	    'port'     => 5222,
-	    'resource' => 'Test',
+	    'host'     => 'localhost', 		# default is 'localhost'
+	    'port'     => 5222, 		# default is 5222
+	    'resource' => '', 			# use default
 	    'channel'  => 'home/localhost/admin/sport',
-	    'to'       => 'pubsub.localhost',
-	    'iq_id'    => '',
-	    'payload'  => '',
+	    'to'       => 'pubsub.localhost', 
+	    'iq_id'    => '', 			# use default
+	    'payload'  => '', 			# N/A for channel creation
 	};
 	Jabber::PubSub::JEAI::create_channel($param);
 
-Subscription to channel:
+Example for subscription to the channel:
 
 	$param = {
 	    'uid'      => 'app2',
 	    'pwd'      => 'app2',
-	    'host'     => 'localhost',
-	    'port'     => 5222,
-	    'resource' => 'Test',
+	    'host'     => 'localhost',		# default is 'localhost'
+	    'port'     => 5222,			# default is 5222
+	    'resource' => '',			# used default
 	    'channel'  => 'home/localhost/admin/sport',
 	    'to'       => 'pubsub.localhost',
-	    'iq_id'    => '',
-	    'payload'  => '',
+	    'iq_id'    => '', 			# use default
+	    'payload'  => '', 			# N/A for channel subscription
 	};
 	Jabber::PubSub::JEAI::subscribe($param);
 
 
-Listen:
+To receive the publised messages you can use any Jabber client. All subscribers to the same channel will get the same messages simultaneously if they are all listening, or get the messages later but in correct sequence. Here is an example for polling a Jabber box and show the payloads in the published messages with Jabber::PubSub::JEAI:
 
 	$param = {
 	    'uid'      => 'app2',
 	    'pwd'      => 'app2',
-	    'host'     => 'localhost',
-	    'port'     => 5222,
+	    'host'     => 'localhost',		# default is 'localhost'
+	    'port'     => 5222,			# default is 5222
 	    'resoirce' => 'Test',
-	    'channel'  => '',
-	    'to'       => '',
-	    'iq_id'    => '',
-	    'payload'  => '',
+	    'channel'  => '', 			# N/A for this purpose
+	    'to'       => '', 			# N/A for this purpose
+	    'iq_id'    => '', 			# N/A for this purpose
+	    'payload'  => '', 			# N/A for this purpose
 	};
-	Jabber::JEAI::listen($param);
+	Jabber::PubSub::JEAI::listen($param);
 
-Publication to channel:
+Example for publication to the channel:
 
 	$param = {
-	    'uid'      => 'admin',
+	    'uid'      => 'admin', 
 	    'pwd'      => 'nimda',
-	    'host'     => 'localhost',
-	    'port'     => 5222,
+	    'host'     => 'localhost',		# default is 'localhost'
+	    'port'     => 5222,			# default is 5222
 	    'resource' => 'Test',
 	    'channel'  => 'home/localhost/admin/sport',
 	    'to'       => 'pubsub.localhost',
-	    'iq_id'    => '',
+	    'iq_id'    => '', 			# use default
 	    'payload'  => 'Breaking news! ...',
 	};
 	Jabber::PubSub::JEAI::publish($param);	
