@@ -26,7 +26,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 
 # Preloaded methods go here.
@@ -51,10 +51,9 @@ sub create_channel{
 		$iq_id = $p->{'iq_id'}||'creating_on_'.$timestamp;
 	} 
         unless (defined $p->{'channel'}){
-        	warn "Missing channel name: using default.";
-		$channel = 'creating_on_'.$timestamp;
+        	die "Missing channel name.";
 	}else{
-		$channel = $p->{'channel'}||'creating_on_'.$timestamp;
+		$channel = $p->{'channel'};
 	} 
         my ($Jabber,$vCard,@connect);
         eval{
@@ -85,7 +84,62 @@ sub create_channel{
                 $Jabber->Send($vCard);
         };
         die $! if($@);
-        print "User $uid has created a pub/sub channel $channel.\n";
+        print "User $uid has ordered to create pub/sub channel $channel.\n";
+        1;
+}
+
+sub delete_channel{
+	my $p = shift;
+ 	my ($uid,$pwd,$host,$port,$resource) = &conn_info($p);
+        my $timestamp = time;
+        my ($channel,$to,$iq_id,$payload);
+        unless (defined $p->{'to'}){
+        	warn "Missing service name: using pubsub.localhost instead.";
+		$to = 'pubsub.localhost';
+	}else{
+		$to = $p->{'to'}||'pubsub.localhost';
+	} 
+        unless (defined $p->{'iq_id'}){
+        	warn "Missing IQ ID: using default.";
+		$iq_id = 'deleting_on_'.$timestamp;
+	}else{
+		$iq_id = $p->{'iq_id'}||'deleting_on_'.$timestamp;
+	} 
+        unless (defined $p->{'channel'}){
+        	die "Missing channel name.";
+	}else{
+		$channel = $p->{'channel'};
+	} 
+        my ($Jabber,$vCard,@connect);
+        eval{
+                $Jabber   = Net::XMPP::Client->new();
+                $Jabber->Connect(
+                        hostname => $host,
+                        port     => $port,
+                );
+                @connect = $Jabber->AuthSend(
+                        username => $uid,
+                        password => $pwd,
+                        resource => $resource,
+                );
+        };
+        die $! if($@);
+        if ($connect[0] ne "ok") {
+                die "Ident/Auth with server failed: $connect[0] - $connect[1]\n";
+        }else{
+                print "User $uid is connected to Jabber server $host on port $port...\n";
+        }
+        my $xml = qq|<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+	<delete node='$channel'/>
+</pubsub>|;
+        eval{
+                $vCard = new Net::Jabber::IQ();
+                $vCard->SetIQ(type=>'set', to=>$to, id=> $iq_id);
+                $vCard->InsertRawXML($xml);
+                $Jabber->Send($vCard);
+        };
+        die $! if($@);
+        print "User $uid has ordered to delete pub/sub channel $channel.\n";
         1;
 }
 
@@ -107,10 +161,9 @@ sub subscribe {
 		$iq_id = $p->{'iq_id'}||'subscribing_on_'.$timestamp;
 	} 
         unless (defined $p->{'channel'}){
-        	warn "Missing channel name: using default.";
-		$channel = 'subscribing_on_'.$timestamp;
+        	die "Missing channel name.";
 	}else{
-		$channel = $p->{'channel'}||'creating_on_'.$timestamp;
+		$channel = $p->{'channel'};
 	}
 	my ($Jabber,$vCard,@connect);
         eval{
@@ -141,7 +194,7 @@ sub subscribe {
                 $Jabber->Send($vCard);
         };
         die $! if($@);
-        print "User $uid has subscribed to channel $channel.\n";
+        print "User $uid has ordered to subscribe to channel $channel.\n";
         1;
 }
 
@@ -163,10 +216,9 @@ sub publish {
 		$iq_id = $p->{'iq_id'}||'publishing_on_'.$timestamp;
 	}
         unless (defined $p->{'channel'}){
-        	warn "Missing channel name: using default.";
-		$channel = 'publishing_on_'.$timestamp;
+        	die "Missing channel name.";
 	}else{
-		$channel = $p->{'channel'}||'creating_on_'.$timestamp;
+		$channel = $p->{'channel'};
 	}
 	unless (defined $p->{'payload'}){
 		die "Missing payload." 
@@ -337,6 +389,21 @@ Example for channel creation:
 	};
 	Jabber::PubSub::JEAI::create_channel($param);
 
+Example for channel deletion:
+
+	my $param = {
+	    'uid'      => 'admin',
+	    'pwd'      => 'nimda',
+	    'host'     => 'localhost', 		# default is 'localhost'
+	    'port'     => 5222, 		# default is 5222
+	    'resource' => '', 			# use default
+	    'channel'  => 'home/localhost/admin/sport',
+	    'to'       => 'pubsub.localhost', 
+	    'iq_id'    => '', 			# use default
+	    'payload'  => '', 			# N/A for channel creation
+	};
+	Jabber::PubSub::JEAI::delete_channel($param);
+
 Example for subscription to the channel:
 
 	$param = {
@@ -395,9 +462,9 @@ None by default.
 
 
 
-=head1 SEE ALSO
+=head1 ACKNOWLEDGMENT
 
-none
+The author wishes to thank to "Thierry Mallard" <thierry.mallard@erlang-fr.org> and "Mickael Remond" <mickael.remond@erlang-fr.org>, leaders of J-EAI development team, for their support.
 
 =head1 AUTHOR
 
